@@ -1,0 +1,47 @@
+sources:
+ my-bq-source:
+   kind: bigquery
+   project: project2-283514
+
+tools:
+  top_selling_products_by_store:
+   kind: bigquery-sql
+   source: my-bq-source
+   statement: |
+      SELECT
+        store_location,
+        product_name,
+        SUM(quantity) AS total_units_sold
+      FROM
+        project2-283514.retial_ops.sales_transactions
+      GROUP BY
+        store_location, product_name
+      ORDER BY
+        store_location, total_units_sold DESC;
+   description: |
+    Returns the total units sold for each product at every store location. Helps identify best-selling products in each region.
+
+  daily_sales_summary:
+      kind: bigquery-sql
+      source: my-bq-source
+      statement: |
+          SELECT
+            DATE(transaction_timestamp) AS sale_date,
+            COUNT(*) AS total_transactions,
+            SUM(quantity * price_per_item) AS total_sales
+          FROM
+            project2-283514.retial_ops.sales_transactions
+          GROUP BY
+            sale_date
+          ORDER BY
+            sale_date DESC;
+      description: |
+          Provides a daily breakdown of sales including number of transactions and total revenue. Useful for tracking day-over-day performance.
+
+toolsets:
+ my_bq_toolset:
+   - top_selling_products_by_store
+   - daily_sales_summary
+
+
+
