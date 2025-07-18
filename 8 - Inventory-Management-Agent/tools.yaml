@@ -1,0 +1,77 @@
+sources:
+  my-bq-source:
+    kind: bigquery
+    project: project2-283514
+
+tools:
+  fetch_stock_for_product:
+    kind: bigquery-sql
+    source: my-bq-source
+    description: |
+      For a product name as input, fetches the current available stock by joining products and stock tables.
+    parameters:
+      - name: product_name
+        type: string
+        description: The name of the product.
+    statement: |
+      SELECT
+        t1.name AS product_name,
+        t2.quantity AS current_stock
+      FROM
+        `project2-283514.InventoryManagement.products` AS t1
+      INNER JOIN
+        `project2-283514.InventoryManagement.stock` AS t2
+      ON
+        t1.id = t2.product_id
+      WHERE
+        LOWER(t1.name) = LOWER(?)
+
+  get_low_stock_items:
+    kind: bigquery-sql   # 🛠️ This line was misaligned earlier
+    source: my-bq-source
+    description: |
+      Returns a list of all products whose current stock is below or equal to the reorder level.
+    parameters: []
+    statement: |
+      SELECT
+        p.name AS product_name,
+        s.quantity AS current_stock,
+        p.reorder_level
+      FROM
+        `project2-283514.InventoryManagement.products` p
+      JOIN
+        `project2-283514.InventoryManagement.stock` s
+      ON
+        p.id = s.product_id
+      WHERE
+        s.quantity <= p.reorder_level
+
+  most_ordered_product_this_week:
+    kind: bigquery-sql
+    source: my-bq-source
+    description: |
+      Returns the most sold product in the last 7 days based on sales data.
+    parameters: []
+    statement: |
+      SELECT
+        p.name AS product_name,
+        SUM(s.quantity_sold) AS total_sold
+      FROM
+        `project2-283514.InventoryManagement.orders` s
+      JOIN
+        `project2-283514.InventoryManagement.products` p
+      ON
+        s.product_id = p.id
+      WHERE
+        s.date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+      GROUP BY
+        p.name
+      ORDER BY
+        total_sold DESC
+      LIMIT 1
+
+toolsets:
+  my_bq_toolset:
+    - fetch_stock_for_product
+    - get_low_stock_items
+    - most_ordered_product_this_week
