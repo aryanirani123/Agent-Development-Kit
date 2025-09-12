@@ -1,0 +1,89 @@
+sources:
+  billing-pricing-bq:
+    kind: bigquery
+    project: your_project_id
+
+tools:
+  list_services:
+    kind: bigquery-sql
+    source: billing-pricing-bq
+    description: Lists all available Google Cloud services in the pricing catalog.
+    statement: |
+      SELECT DISTINCT service.description 
+      FROM `aryanpython.gcp_sku_prices.cloud_pricing_export` 
+      ORDER BY service.description
+
+  list_skus_for_service:
+    kind: bigquery-sql
+    source: billing-pricing-bq
+    description: Lists up to 20 SKUs for a given Google Cloud service.
+    parameters:
+      - name: service_name
+        type: string
+        description: The name of the service (case-insensitive).
+    statement: |
+      SELECT
+        sku.id,
+        sku.description,
+        service.description as service_name
+      FROM
+        `aryanpython.gcp_sku_prices.cloud_pricing_export`
+      WHERE
+        LOWER(service.description) = LOWER(@service_name)
+      ORDER BY
+        sku.description
+      LIMIT 20
+
+  list_skus_for_service_and_region:
+    kind: bigquery-sql
+    source: billing-pricing-bq
+    description: Lists up to 20 SKUs for a given Google Cloud service in a specific region.
+    parameters:
+      - name: service_name
+        type: string
+        description: The name of the service (case-insensitive).
+      - name: region
+        type: string
+        description: The region to filter by (e.g., 'us-east1').
+    statement: |
+      SELECT
+        sku.id,
+        sku.description,
+        service.description as service_name,
+        geo_taxonomy.regions
+      FROM
+        `aryanpython.gcp_sku_prices.cloud_pricing_export`
+      WHERE
+        LOWER(service.description) = LOWER(@service_name)
+        AND @region IN UNNEST(geo_taxonomy.regions)
+      ORDER BY
+        sku.description
+      LIMIT 20
+
+  get_sku_pricing:
+    kind: bigquery-sql
+    source: billing-pricing-bq
+    description: Retrieves the pricing information for a specific SKU.
+    parameters:
+      - name: sku_id
+        type: string
+        description: The ID of the SKU.
+    statement: |
+      SELECT
+        sku.id,
+        sku.description,
+        service.description as service_name,
+        pricing_unit,
+        list_price,
+        account_currency_code
+      FROM
+        `aryanpython.gcp_sku_prices.cloud_pricing_export`
+      WHERE
+        sku.id = @sku_id
+
+toolsets:
+  billing-pricing-tools-v4:
+    - list_services
+    - list_skus_for_service
+    - list_skus_for_service_and_region
+    - get_sku_pricing
