@@ -10,7 +10,7 @@ tools:
     description: Lists all available Google Cloud services in the pricing catalog.
     statement: |
       SELECT DISTINCT service.description 
-      FROM `aryanpython.gcp_sku_prices.cloud_pricing_export` 
+      FROM `your_dataset_id` 
       ORDER BY service.description
 
   list_skus_for_service:
@@ -27,7 +27,7 @@ tools:
         sku.description,
         service.description as service_name
       FROM
-        `aryanpython.gcp_sku_prices.cloud_pricing_export`
+        `your_dataset_id`
       WHERE
         LOWER(service.description) = LOWER(@service_name)
       ORDER BY
@@ -52,7 +52,7 @@ tools:
         service.description as service_name,
         geo_taxonomy.regions
       FROM
-        `aryanpython.gcp_sku_prices.cloud_pricing_export`
+        `your_dataset_id`
       WHERE
         LOWER(service.description) = LOWER(@service_name)
         AND @region IN UNNEST(geo_taxonomy.regions)
@@ -77,7 +77,7 @@ tools:
         list_price,
         account_currency_code
       FROM
-        `aryanpython.gcp_sku_prices.cloud_pricing_export`
+        `your_dataset_id`
       WHERE
         sku.id = @sku_id
 
