@@ -1,7 +1,7 @@
 sources:
   gcp_billing_bq:
     kind: bigquery
-    project: aryanpython
+    project: your_project_id
 
 tools:
   get_monthly_cost_summary:
