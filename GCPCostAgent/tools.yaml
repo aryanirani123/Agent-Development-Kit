@@ -1,0 +1,78 @@
+sources:
+  gcp_billing_bq:
+    kind: bigquery
+    project: aryanpython
+
+tools:
+  get_monthly_cost_summary:
+    kind: bigquery-sql
+    source: gcp_billing_bq
+    description: "Retrieves a summary of Google Cloud costs for a specific invoice month."
+    parameters:
+      - name: invoice_month
+        type: string
+        description: "The invoice month in YYYYMM format (e.g., 202307)."
+    statement: |
+      SELECT
+        invoice.month,
+        SUM(cost) + SUM( IFNULL( (SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS total_cost,
+        currency
+      FROM
+        `your_dataset_id`
+      WHERE
+        invoice.month = @invoice_month
+      GROUP BY
+        invoice.month, currency
+      ORDER BY
+        invoice.month
+
+  get_cost_by_project:
+    kind: bigquery-sql
+    source: gcp_billing_bq
+    description: "Retrieves a breakdown of Google Cloud costs by project for a specific invoice month."
+    parameters:
+      - name: invoice_month
+        type: string
+        description: "The invoice month in YYYYMM format (e.g., 202307)."
+    statement: |
+      SELECT
+        project.name,
+        project.id,
+        SUM(cost) as final_cost,
+        currency
+      FROM
+        `your_dataset_id`
+      WHERE
+        invoice.month = @invoice_month
+      GROUP BY
+        1, 2, currency
+      ORDER BY
+        final_cost DESC
+
+  get_cost_by_service:
+    kind: bigquery-sql
+    source: gcp_billing_bq
+    description: "Retrieves a breakdown of Google Cloud costs by service for a specific invoice month."
+    parameters:
+      - name: invoice_month
+        type: string
+        description: "The invoice month in YYYYMM format (e.g., 202307)."
+    statement: |
+      SELECT
+        service.description,
+        SUM(cost) as final_cost,
+        currency
+      FROM
+        `your_dataset_id`
+      WHERE
+        invoice.month = @invoice_month
+      GROUP BY
+        1, currency
+      ORDER BY
+        final_cost DESC
+
+toolsets:
+  gcp-cost-agent-tools:
+    - get_monthly_cost_summary
+    - get_cost_by_project
+    - get_cost_by_service
